@@ -1,0 +1,978 @@
+---
+title: "FDA_Project1_Rmarkdown"
+author: "Aneesha Subramanian, Nikita Modi, Shachi Doshi"
+date: "11/21/2021"
+output: html_document
+---
+
+```{r}
+#importing desired libraries
+library(NbClust)
+library(factoextra)
+library(ggplot2)
+library(gtools)
+library(ClusterR)
+library(plotly)
+library(dplyr)
+library(cluster)
+library(clValid)
+library(fpc)
+
+```
+
+#------------------------------TASK 1--------------------------------------------------------
+```{r}
+#--------------DATASET 1--------------------------------------------------------------------
+
+#reading first dataset
+data1 <- read.csv("C:/Users/Nikita Modi/Desktop/NeuSem 1/FDA/Project/Data1.csv")
+#data1 <- read.csv("~/Downloads/Data1.csv")
+#checking the distribution of values for each class
+table(data1$Class)
+final_data1 <- data1[2:4]
+#scale data
+data1_scale <- scale(final_data1)
+data1_scale<-data.frame(data1_scale)
+
+#----------K-MEANS FOR DATASET1----------------
+
+#1. k-means algorithm with k=7 since, there are 7 classes 
+km1 <- kmeans(data1_scale, centers = 7, nstart = 20)
+print(km1)
+km1_cluster <- km1$cluster
+
+#2. External validation
+# Rand_index(Accuracy)= (TP+TN)/M 
+#where M=TP+FP+FN+TN, TP : Number of data pairs found in same cluster, both in Class column and the  cluster found by the algorithm, FP : Number of data pairs found in same cluster, in cluster found by the algorithm but in different clusters in Class column, FN : Number of data pairs found in different clusters in cluster found by the algorithm but in the same cluster in Class Column, TN :  Number of data pairs found in different clusters,both in clusters found by the algorithm and Class column
+external_validation(data1$Class,km1_cluster, method = "rand_index")
+rownames(data1_scale) = paste(data1$Class, 1:dim(data1_scale)[1], sep ='_')
+
+#3. visualising the clusters according to the original class (2d)
+fviz_cluster(list(data = data1_scale,cluster = data1$Class),main="ORIGINAL CLASS CLUSTER PLOT FOR DATASET 1")
+#visualising the clusters according to the original class (3d)
+p2 <- plot_ly(data1_scale, x=data1_scale$X1, y=data1_scale$X2, 
+             z=data1_scale$X3, color=data1$Class) %>%
+   layout(title="3D ORIGINAL CLASS CLUSTER PLOT FOR DATASET 1")%>%
+
+  add_markers(size=1.5)
+p2
+
+#4. Visualising the clusters according to the clustering algorithm (2d)
+fviz_cluster(list(data = data1_scale,cluster = km1_cluster),main="KMEANS CLUSTER PLOT FOR DATASET 1")
+#Visualising the clusters according to the clustering algorithm (3d)
+p1 <- plot_ly(data1_scale, x=data1_scale$X1, y=data1_scale$X2, 
+             z=data1_scale$X3, color=km1_cluster) %>%
+  layout(title="3D KMEANS CLUSTER PLOT FOR DATASET 1")%>%
+  add_markers(size=1.5)
+p1
+
+#----------HIERARCHICAL CLUSTERING------------------
+
+#1. Hierarchical Clustering with k=7 since, there are 7 classes
+#finding the euclidean distance
+data1_distl=dist(data1_scale)
+# Hierarchical Clustering using single linkage
+hc_data1<-hclust(data1_distl,method="single")
+#plotting dendogram
+plot(hc_data1)
+rect.hclust(hc_data1,k=7,border=2:7)
+#cutting the dendogram to get desired clusters
+h_clusters=cutree(hc_data1, k=7)
+rownames(data1_scale)=paste(data1$Class,1:dim(data1_scale)[1], sep = "_")
+
+#2. External validation using Rand Index since, it gives accuracy values 
+
+external_validation(data1$Class,h_clusters, method = "rand_index")
+
+#4. Visualising the clusters in 2d using clustering algorithm
+fviz_cluster(list(data=data1_scale,cluster=h_clusters),main="HIERARCHICAL CLUSTER PLOT FOR DATASET 1")
+table(h_clusters,data1$Class)
+#Visualising the clusters in 3d using clustering algorithm
+p3 <- plot_ly(data1_scale, x=data1_scale$X1, y=data1_scale$X2, 
+             z=data1_scale$X3, color=h_clusters) %>%
+  layout(title="3D HIERARCHICAL CLUSTER PLOT FOR DATASET 1")%>%
+  add_markers(size=1.5)
+p3
+
+```
+
+
+```{r}
+#---------------DATASET 2--------------------------------------------------------------------
+
+#reading first dataset
+data2 <- read.csv("C:/Users/Nikita Modi/Desktop/NeuSem 1/FDA/Project/Data2.csv")
+#checking the distribution of values for each class
+table(data2$Class)
+final_data2 <- data2[2:4]
+
+#scale data
+data2_scale <- scale(final_data2)
+data2_scale<-data.frame(data2_scale)
+
+#---------- K - MEANS FOR DATASET 2---------------------- 
+
+#1. k-means algorithm with k=4 since, there are 4 classes 
+km2 <- kmeans(data2_scale, centers = 4, nstart = 100)
+print(km2)
+km2_cluster <- km2$cluster
+rownames(data2_scale) = paste(data2$Class, 1:dim(data2_scale)[1], sep ='_')
+
+#2. external validation using rand_index for accuracy
+external_validation(data2$Class,km2_cluster, method = "rand_index")
+
+#3. visualising the clusters according to the original class (2d)
+
+fviz_cluster(list(data = data2_scale,cluster = data2$Class),main="ORIGINAL CLASS CLUSTER PLOT FOR DATASET 2")
+#visualising the clusters according to the original class (3d)
+p5 <- plot_ly(data2_scale, x=data2_scale$X, y=data2_scale$Y, 
+             z=data2_scale$C, color=data2$Class) %>%
+   layout(title="3D ORIGINAL CLASS CLUSTER PLOT FOR DATASET 2")%>%
+  add_markers(size=1.5)
+p5
+
+#4. visualising the clusters according to the clustering algorithm (2D)
+fviz_cluster(list(data = data2_scale,cluster = km2_cluster),main="KMEANS CLUSTER PLOT FOR DATASET 2")
+#visualising the clusters according to the clustering algorithm (3D)
+p4 <- plot_ly(data2_scale, x=data2_scale$X, y=data2_scale$Y, 
+             z=data2_scale$C, color=km2_cluster) %>%
+  layout(title="3D KMEANS CLUSTER PLOT FOR DATASET 2")%>%
+  add_markers(size=1.5)
+p4
+
+
+
+#--------------- Hierarchical Clustering-----------------------
+
+#1. Hierarchical Clustering with k=4 since, there are 4 classes
+data2_distl=dist(data2_scale)
+hc_data2<-hclust(data2_distl,method="single")
+#plotting dendogram
+plot(hc_data2)
+rect.hclust(hc_data2,k=4,border=2:4)
+#cutting dendogram to get desired number of clusters
+h_clusters2=cutree(hc_data2, k=4)
+rownames(data2_scale)=paste(data2$Class,1:dim(data2_scale)[1], sep = "_")
+
+#2. External validation using rand_index for accuracy 
+external_validation(data2$Class,h_clusters2, method = "rand_index")
+
+#4. visualising the clusters in 2d using clustering algorithm
+fviz_cluster(list(data=data2_scale,cluster=h_clusters2),main="HIERARCHICAL CLUSTER PLOT FOR DATASET 2")
+table(h_clusters2,data2$Class)
+#visualising the clusters in 3d using clustering algorithm
+p6 <- plot_ly(data2_scale, x=data2_scale$X, y=data2_scale$Y, 
+             z=data2_scale$C, color=h_clusters2) %>%
+  layout(title="3D HIERARCHICAL CLUSTER PLOT FOR DATASET 2")%>%
+  add_markers(size=1.5)
+p6
+
+
+```
+
+```{r}
+#-------------------------DATASET 3------------------------------------
+
+#reading dataset
+data3 <- read.csv("C:/Users/Nikita Modi/Desktop/NeuSem 1/FDA/Project/Data3.csv")
+#checking the distribution of values for each class
+table(data3$Class)
+final_data3 <- data3[2:4]
+#scale data
+data3_scale <- scale(final_data3)
+data3_scale<-data.frame(data3_scale)
+
+#-----------K-MEANS---------------------------------------
+#1. k-means algorithm with k=4 since, there are 4 classes 
+km3 <- kmeans(data3_scale, centers = 4, nstart = 100)
+print(km3)
+km3_cluster <- km3$cluster
+
+#2. external validation using rand_index for accuracy
+external_validation(data3$Class,km3_cluster, method = "rand_index")
+
+#3. Visualizing the clusters according to the original class in 2D
+rownames(data3_scale) = paste(data3$Class, 1:dim(data3_scale)[1], sep ='_')
+fviz_cluster(list(data = data3_scale,cluster = data3$Class),main="ORIGINAL CLASS CLUSTER PLOT FOR DATASET 3")
+#visualizing the clusters according to the original class in 3D
+p8 <- plot_ly(data3_scale, x=data3_scale$X1, y=data3_scale$X2, 
+             z=data3_scale$X3, color=data3$Class) %>%
+  layout(title="3D ORIGINAL CLASS CLUSTER PLOT FOR DATASET 3")%>%
+  add_markers(size=1.5)
+p8
+
+#4. Visualizing the clusters according to the clustering algorithm in 2D
+fviz_cluster(list(data = data3_scale,cluster = km3_cluster),main="KMEANS CLUSTER PLOT FOR DATASET 3")
+#visualizing the clusters according to the clustering algorithm in 3D
+p7 <- plot_ly(data3_scale, x=data3_scale$X1, y=data3_scale$X2, 
+             z=data3_scale$X3, color=km3_cluster) %>%
+  layout(title="3D KMEANS CLUSTER PLOT FOR DATASET 3")%>%
+  add_markers(size=1.5)
+p7
+
+
+
+#-------------HIERARCHICAL CLUSTERING----------------------
+#1. Hierarchical Clustering with k=4 since, there are 4 classes
+
+data3_distl=dist(data3_scale)
+hc_data3<-hclust(data3_distl,method="single")
+#Plotting dendogram
+plot(hc_data3)
+rect.hclust(hc_data3,k=4,border=2:4)
+#cutting dendogram to get the desired number of clusters
+h_clusters3=cutree(hc_data3, k=4)
+
+#2. external validation using rand_index for accuracy
+external_validation(data3$Class,h_clusters3, method = "rand_index")
+
+#4. visualizing the clusters in 2D using clustering algorithm
+rownames(data3_scale)=paste(data3$Class,1:dim(data3_scale)[1], sep = "_")
+fviz_cluster(list(data=data3_scale,cluster=h_clusters3),main="HIERARCHICAL CLUSTER PLOT FOR DATASET 3")
+table(h_clusters3,data3$Class)
+
+#visualizing the clusters in 3D using clustering algorithm
+p9 <- plot_ly(data3_scale, x=data3_scale$X1, y=data3_scale$X2, 
+             z=data3_scale$X3, color=h_clusters3) %>%
+  layout(title="3D HIERARCHICAL CLUSTER PLOT FOR DATASET 3")%>%
+  add_markers(size=1.5)
+p9
+
+```
+
+```{r}
+#---------------DATASET 4----------------------------------------------------------
+#reading dataset
+data4 <- read.csv("C:/Users/Nikita Modi/Desktop/NeuSem 1/FDA/Project/Data4.csv")
+#checking the distribution of values for each class
+table(data4$Class)
+final_data4 <- data4[2:4]
+#scale data
+data4_scale <- scale(final_data4)
+data4_scale<-data.frame(data4_scale)
+#---------K-MEANS FOR DATASET 4 -----------------
+#1. k-means algorithm with k=2 since, there are 2 classes 
+km4 <- kmeans(data4_scale, centers = 2, nstart = 10)
+print(km4)
+km4_cluster <- km4$cluster
+
+#2. external validation using rand_index
+external_validation(data4$Class,km4_cluster, method = "rand_index")
+rownames(data4_scale) = paste(data4$Class, 1:dim(data4_scale)[1], sep ='_')
+
+#3. visualising the clusters according to the original class in 2D
+
+fviz_cluster(list(data = data4_scale,cluster = data4$Class),main="ORIGINAL CLASS CLUSTER PLOT FOR DATASET 4")
+#visualising the clusters according to the original class in 3D
+p11 <- plot_ly(data4_scale, x=data4_scale$X1, y=data4_scale$X2, 
+             z=data4_scale$X3, color=data4$Class) %>%
+  layout(title="3D ORIGINAL CLASS CLUSTER PLOT FOR DATASET 4")%>%
+  add_markers(size=1.5)
+p11
+
+#4. visualising the clusters according to the clustering algorithm in 2D
+fviz_cluster(list(data = data4_scale,cluster = km4_cluster),main="KMEANS CLUSTER PLOT FOR DATASET 4")
+#visualising the clusters according to the clustering algorithm in 3D
+p10 <- plot_ly(data4_scale, x=data4_scale$X1, y=data4_scale$X2, 
+             z=data4_scale$X3, color=km4_cluster) %>%
+  layout(title="3D KMEANS CLUSTER PLOT FOR DATASET 4")%>%
+  add_markers(size=1.5)
+p10
+
+
+
+#----------HIERARCHICAL CLUSTERING---------------
+#1. Hierarchical Clustering with k=2 since, there are 2 classes
+
+data4_distl=dist(data4_scale)
+hc_data4<-hclust(data4_distl,method="single")
+#Plotting dendogram
+plot(hc_data4)
+rect.hclust(hc_data4,k=2,border=2:3)
+#cutting the dendogram to get desired number of clusters
+h_clusters4=cutree(hc_data4, k=2)
+rownames(data4_scale)=paste(data4$Class,1:dim(data4_scale)[1], sep = "_")
+
+#2. external validation using rand_index for accuracy
+external_validation(data4$Class,h_clusters4, method = "rand_index")
+
+#4. visualising the clusters according to the clustering algorithm in 2D
+fviz_cluster(list(data=data4_scale,cluster=h_clusters4),main="HIERARCHICAL CLUSTER PLOT FOR DATASET 4")
+table(h_clusters4,data4$Class)
+
+#visualising the clusters according to the clustering algorithm in 3D
+p12 <- plot_ly(data4_scale, x=data4_scale$X1, y=data4_scale$X2, 
+             z=data4_scale$X3, color=h_clusters4) %>%
+  layout(title="3D HIERARCHICAL CLUSTER PLOT FOR DATASET 4")%>%
+  add_markers(size=1.5)
+p12
+
+```
+
+```{r}
+#-------------------DATASET 5------------------------------------------------------------ 
+#reading dataset
+data5 <- read.csv("C:/Users/Nikita Modi/Desktop/NeuSem 1/FDA/Project/Data5.csv")
+#checking the distribution of values for each class
+table(data5$Class)
+final_data5 <- data5[2:4]
+#scale data
+data5_scale <- scale(final_data5)
+data5_scale <-data.frame(data5_scale)
+#-----------USING K-MEANS-----------------------------------
+#1. k-means algorithm with k=2 since, there are 2 classes 
+km5 <- kmeans(data5_scale, centers = 2, nstart = 100)
+print(km5)
+km5_cluster <- km5$cluster
+
+#2. external validation using rand_index
+external_validation(data5$Class,km5_cluster, method = "rand_index")
+
+#3. visualising the clusters according to the original class in 2D
+rownames(data5_scale) = paste(data5$Class, 1:dim(data5_scale)[1], sep ='_')
+fviz_cluster(list(data = data5_scale,cluster = data5$Class),main="ORIGINAL CLASS CLUSTER PLOT FOR DATASET 5")
+#visualising the clusters according to the original class in 3D
+p14 <- plot_ly(data5_scale, x=data5_scale$X1, y=data5_scale$X2, 
+             z=data5_scale$X3, color=data5$Class) %>%
+   layout(title="3D ORIGINAL CLASS CLUSTER PLOT FOR DATASET 5")%>%
+  add_markers(size=1.5)
+p14
+
+#4. visualising the clusters according to the clustering algorithm in 2D
+fviz_cluster(list(data = data5_scale,cluster = km5_cluster),main="KMEANS CLUSTER PLOT FOR DATASET 5")
+#visualising the clusters according to the clustering algorithm in 3D
+p13 <- plot_ly(data5_scale, x=data5_scale$X1, y=data5_scale$X2, 
+             z=data5_scale$X3, color=km5_cluster) %>%
+  layout(title="3D KMEANS CLUSTER PLOT FOR DATASET 5")%>%
+  add_markers(size=1.5)
+p13
+
+
+
+#-------------HIERARCHICAL CLUSTERING---------------
+#1. Hierarchical Clustering with k=2 since, there are 2 classes
+data5_distl=dist(data5_scale)
+hc_data5<-hclust(data5_distl,method="single")
+#Plotting dendogram
+plot(hc_data5)
+rect.hclust(hc_data5,k=2,border=2:3)
+#cutting dendogram to get the desired number of clusters
+h_clusters5=cutree(hc_data5, k=2)
+rownames(data5_scale)=paste(data5$Class,1:dim(data5_scale)[1], sep = "_")
+
+#2. external validation using rand_index for accuracy
+external_validation(data5$Class,h_clusters5, method = "rand_index")
+
+#4. visualising the clusters according to the clustering algorithm in 2D
+fviz_cluster(list(data=data5_scale,cluster=h_clusters5)
+,main="HIERARCHICAL CLUSTER PLOT FOR DATASET 5")
+table(h_clusters5,data5$Class)
+
+#visualising the clusters according to the clustering algorithm in 3D
+p15 <- plot_ly(data5_scale, x=data5_scale$X1, y=data5_scale$X2,
+               
+             z=data5_scale$X3, color=h_clusters5) %>%
+  layout(title="3D HIERARCHICAL CLUSTER PLOT FOR DATASET 5")%>%
+  add_markers(size=1.5)
+p15
+
+```
+
+```{r}
+#------------------DATASET 6---------------------------------------------------------------- 
+#reading first dataset
+data6 <- read.csv("C:/Users/Nikita Modi/Desktop/NeuSem 1/FDA/Project/Data6.csv")
+#checking the distribution of values for each class
+table(data6$Class)
+final_data6 <- data6[2:3]
+#scale data
+data6_scale <- scale(final_data6)
+data6_scale<-data.frame(data6_scale)
+#------------K-MEANS---------------------------------------------
+#1. k-means algorithm with k=2 since, there are 2 classes 
+km6 <- kmeans(data6_scale, centers = 2, nstart = 100)
+print(km6)
+km6_cluster <- km6$cluster
+
+#2. external validation using rand_index
+external_validation(data6$Class,km6_cluster, method = "rand_index")
+
+#3. visualising the clusters according to the original class in 2D
+rownames(data6_scale) = paste(data6$Class, 1:dim(data6_scale)[1], sep ='_')
+fviz_cluster(list(data = data6_scale,cluster = data6$Class),main="ORIGINAL CLASS CLUSTER PLOT FOR DATASET 6")
+#visualising the clusters according to the original class in 3D
+p17 <- plot_ly(data6_scale, x=data6_scale$X1, y=data6_scale$X2, 
+            color=data6$Class) %>% layout(title="3D ORIGINAL CLASS CLUSTER PLOT FOR DATASET 6")%>%
+  add_markers(size=1.5)
+p17
+
+#4. visualising the clusters according to the clustering algorithm in 2D
+fviz_cluster(list(data = data6_scale,cluster = km6_cluster),main="KMEANS CLUSTER PLOT FOR DATASET 6")
+#visualising the clusters according to the clustering algorithm in 3D
+p16 <- plot_ly(data6, x=data6_scale$X1, y=data6_scale$X2, color=km6_cluster) %>%
+  layout(title="3D KMEANS CLUSTER PLOT FOR DATASET 6")%>%
+  add_markers(size=1.5)
+p16
+
+
+
+#----------HIERARCHICAL CLUSTERING---------------------
+#1. Hierarchical Clustering with k=2 since, there are 2 classes
+data6_distl=dist(data6_scale)
+hc_data6<-hclust(data6_distl,method="single")
+#Plotting dendogram
+plot(hc_data6)
+rect.hclust(hc_data6,k=2,border=2:3)
+#Cutting dendogram to get desirerd number of clusters
+h_clusters6=cutree(hc_data6, k=2)
+rownames(data6_scale)=paste(data6$Class,1:dim(data6_scale)[1], sep = "_")
+
+#2. external validation using rand_index for accuracy
+external_validation(data6$Class,h_clusters6, method = "rand_index")
+
+#4. visualising the clusters according to the clustering algorithm in 2D
+fviz_cluster(list(data=data6_scale,cluster=h_clusters6),main="HIERARCHICAL CLUSTER PLOT FOR DATASET 6")
+table(h_clusters6,data6$Class)
+
+#visualising the clusters according to the clustering algorithm in 3D
+p18 <- plot_ly(data6_scale, x=data6_scale$X1, y=data6_scale$X2, color=h_clusters6) %>%
+  layout(title="3D HIERARCHICAL CLUSTER PLOT FOR DATASET 6")%>%
+  add_markers(size=1.5)
+p18
+
+```
+
+```{r}
+#---------------------DATA SET 7--------------------------------------------------------
+#reading first dataset
+data7 <- read.csv("C:/Users/Nikita Modi/Desktop/NeuSem 1/FDA/Project/Data7.csv")
+#data7 <- read.csv("~/Downloads/Data7.csv")
+#checking the distribution of values for each class
+table(data7$Class)
+final_data7 <- data7[2:3]
+#scale data
+data7_scale <- scale(final_data7)
+data7_scale<-data.frame(data7_scale)
+#--------------K-MEANS-------------------------------
+#1. k-means algorithm with k=6 since, there are 6 classes 
+km7 <- kmeans(data7_scale, centers = 6, nstart = 100)
+print(km7)
+km7_cluster <- km7$cluster
+
+#2. external validation using rand_index for accuracy
+external_validation(data7$Class,km7_cluster, method = "rand_index")
+
+#3. visualising the clusters according to the original class in 2D
+rownames(data7_scale) = paste(data7$Class, 1:dim(data7_scale)[1], sep ='_')
+fviz_cluster(list(data = data7_scale,cluster = data7$Class),main="ORIGINAL CLASS CLUSTER PLOT FOR DATASET 7")
+#visualising the clusters according to the original class in 3D
+p20 <- plot_ly(data7_scale, x=data7_scale$X1, y=data7_scale$X2, color=data7$Class) %>%
+  layout(title="3D ORIGINAL CLASS CLUSTER PLOT FOR DATASET 7")%>%
+  add_markers(size=1.5)
+p20
+
+#4. visualising the clusters according to the clustering algorithm in 2D 
+fviz_cluster(list(data = data7_scale,cluster = km7_cluster),main="KMEANS CLUSTER PLOT FOR DATASET 7")
+#visualising the clusters according to the clustering algorithm in 3D 
+p19 <- plot_ly(data7_scale, x=data7_scale$X1, y=data7_scale$X2, color=km7_cluster) %>%
+  layout(title="3D KMEANS CLUSTER PLOT FOR DATASET 7")%>%
+  add_markers(size=1.5)
+p19
+
+#--------HIERARCHICAL CLUSTERING------------------- 
+#1. Hierarchical Clustering with k=6 since, there are 6 classes
+data7_distl=dist(data7_scale)
+hc_data7<-hclust(data7_distl,method="single")
+#Plotting dendogram
+plot(hc_data7)
+rect.hclust(hc_data7,k=6,border=2:5)
+#cutting dendogram to get required number of clusters
+h_clusters7=cutree(hc_data7, k=6)
+rownames(data7_scale)=paste(data7$Class,1:dim(data7_scale)[1], sep = "_")
+
+#2. external validation using rand_index for accuracy
+external_validation(data7$Class,h_clusters7, method = "rand_index")
+
+#4. visualising the clusters according to the clustering algorithm in 2D
+fviz_cluster(list(data=data7_scale,cluster=h_clusters7),main="HIERARCHICAL CLUSTER PLOT FOR DATASET 7")
+table(h_clusters7,data7$Class)
+
+#visualising the clusters according to the clustering algorithm in 3D
+p21 <- plot_ly(data7_scale, x=data7_scale$X1, y=data7_scale$X2, 
+              color=h_clusters7) %>%
+  layout(title="3D HIERARCHICAL CLUSTER PLOT FOR DATASET 7")%>%
+  add_markers(size=1.5)
+p21
+
+```
+
+```{r}
+#----------------------DATASET 8------------------------------------------------------
+#reading dataset
+data8 <- read.csv("C:/Users/Nikita Modi/Desktop/NeuSem 1/FDA/Project/Data8.csv")
+#checking the distribution of values for each class
+table(data8$Class)
+final_data8 <- data8[2:4]
+#scale data
+data8_scale <- scale(final_data8)
+data8_scale<-data.frame(data8_scale)
+#-----------K-MEANS FOR DATASET 8----------------------------
+#1. k-means algorithm with k=1 since, there is only 1 class
+km8 <- kmeans(data8_scale, centers = 1, nstart = 100)
+print(km8)
+km8_cluster <- km8$cluster
+
+#2. external validation using rand_index for accuracy
+
+external_validation(data8$Class,km8_cluster, method = "rand_index")
+
+#3. visualising the clusters according to the original class in 2D
+rownames(data8_scale) = paste(data8$Class, 1:dim(data8_scale)[1], sep ='_')
+fviz_cluster(list(data = data8_scale,cluster = data8$Class),main="ORIGINAL CLASS CLUSTER PLOT FOR DATASET 8")
+#visualising the clusters according to the original class in 3D
+p23 <- plot_ly(data8_scale, x=data8_scale$X1, y=data8_scale$X2, 
+             z=data8_scale$X3, color=data8$Class) %>%
+  layout(title="3D ORIGINAL CLASS CLUSTER PLOT FOR DATASET 8")%>%
+
+  add_markers(size=1.5)
+p23
+
+#4. visualising the clusters according to the clustering algorithm in 2D 
+
+fviz_cluster(list(data = data8_scale,cluster = km8_cluster),main="KMEANS CLUSTER PLOT FOR DATASET 8")
+#visualising the clusters according to the clustering algorithm in 3D 
+p22 <- plot_ly(data8_scale, x=data8_scale$X1, y=data8_scale$X2, 
+             z=data8_scale$X3, color=km8_cluster) %>%
+  layout(title="3D KMEANS CLUSTER PLOT FOR DATASET 8")%>%
+  add_markers(size=1.5)
+p22
+
+
+#--------------HIERARCHICAL CLUSTERING------------------------
+#1. Hierarchical Clustering with k=1 since, there is only 1 class
+data8_distl=dist(data8_scale)
+hc_data8<-hclust(data8_distl,method="single")
+#Plotting dendogram 
+plot(hc_data8)
+
+#cutting dendogram to get desired number of clusters 
+h_clusters8=cutree(hc_data8, k=1)
+rownames(data8_scale)=paste(data8$Class,1:dim(data8_scale)[1], sep = "_")
+
+#2. external validation using rand_index for accuracy
+external_validation(data8$Class,h_clusters8, method = "rand_index")
+
+#4. visualising the clusters according to the clustering algorithm in 2D
+fviz_cluster(list(data=data8_scale,cluster=h_clusters8),main="HIERARCHICAL CLUSTER PLOT FOR DATASET 8")
+table(h_clusters8,data8$Class)
+
+#visualising the clusters according to the clustering algorithm in 3D
+p24 <- plot_ly(data8_scale, x=data8_scale$X1, y=data8_scale$X2, 
+             z=data8_scale$X3, color=h_clusters8) %>%
+  
+layout(title="3D HIERARCHICAL CLUSTER PLOT FOR DATASET 8")%>%
+  add_markers(size=1.5)
+p24
+
+
+```
+
+#------------------------------#TASK 2-----------------------------------------------------
+
+```{r}
+#Reading data set which was cleaned in excel by removing 2 columns - Energy Usage and Lending Interest due to presence of maximum NULL values,converting Health Exp/Capita, GDP columns from dollar to numeric value,converting Business Tax Rate column from % to numeric value
+
+
+world<- read.csv("C:/Users/Nikita Modi/Desktop/NeuSem 1/FDA/Project/World Indicators.csv")
+#removing NAs
+world1<- world %>% na.omit()
+#Considering columns from 1 to 16 i.e removing Country and region 
+final_data1 <- world1[1:16]
+#scale data
+data1_scale <- scale(final_data1)
+final <- data.frame(data1_scale)
+#finding optimal number of clusters (k) using elbow method
+fviz_nbclust(data1_scale, kmeans, method = "wss")
+
+#--------------K-MEANS FOR ENTIRE DATASET------------------------------
+# 1. K-means and hierarchical clustering methods to group similar countries together
+
+km1 <- kmeans(data1_scale, centers = 2, nstart = 20)
+print(km1)
+rownames(data1_scale)=paste(world1$Country,1:dim(world1)[1], sep = "_")
+#Visualizing K-means clusters for entire dataset (Columns 1to 16)
+fviz_cluster(list(data=data1_scale,cluster=km1$cluster),main="KMEANS CLUSTER PLOT FOR ENTIRE DATASET(COLUMNS 1 TO 16) ")
+
+
+#Explanation : When we implement K-Means algorithm for the entire dataset, we get 2 clusters. On analyzing the 2 clusters, we find that one cluster has countries like - the United States of America, China, Japan, Ireland, United Kingdom etc and the other cluster has countries like - Congo, Iraq, Haiti, India etc. Intuitively speaking, we define these two clusters respectively as - "Developed Countries" and "developing countries".  
+
+## 3. list of all the groups and the countries included within the groups
+#Creating a table of countries by cluster
+km1_table <- data.frame(world1$Country,km1$cluster)
+km1_table <- km1_table %>% arrange(km1_table$km1.cluster)
+
+#--------------1. HEIRARCHICAL CLUSTERING FOR ENTIRE DATASET-----------------------------
+#Finding the euclidean distance for the data points
+data1_distl=dist(data1_scale)
+hc_data1<-hclust(data1_distl,method="single")
+#Plotting the dendogram
+plot(hc_data1)
+rect.hclust(hc_data1,k=2, border = 2:4)
+#Cutting the dendogram to get clusters
+h_clusters=cutree(hc_data1, k=2)
+rownames(data1_scale)=paste(world1$Country,1:dim(world1)[1], sep = "_")
+#Visualizing the clusters 
+fviz_cluster(list(data=data1_scale,cluster=h_clusters),main="HEIRARCHICAL CLUSTER PLOT FOR ENTIRE DATASET(COLUMNS 1 TO 16) ")
+
+#Explanation : When we implement Hierarchical clustering algorithm for the entire dataset, we get 2 clusters. On analyzing the 2 clusters, we find that one cluster has countries like - the United States of America, China, Japan, Ireland, United Kingdom, India, Haiti, Iraq etc and the other cluster has only 1 country - Suriname. 
+
+## 3. list of all the groups and the countries included within the groups
+#Creating a table of countries by cluster
+hc1_table <- data.frame(world1$Country,h_clusters)
+hc1_table <- hc1_table %>% arrange(hc1_table$h_clusters)
+
+## -----------------------------INTERNAL VALIDATION FOR ENTIRE DATASET---------------------
+# 2. Internal validation metrics to report the cluster quality
+#using CH index for internal validation
+# CH = (SSB/(M-1))/(SSE/(M))
+# where SSE : Sum of Squared Errors , SSB : Group Sum of Squares, SSE : 
+round(calinhara(data1_scale,km1$cluster),digits=2)
+round(calinhara(data1_scale,h_clusters),digits=2)
+
+#-------3. EXPLANATION FOR CH COEFICIENT AND BEST CLUSTERING SOLUTION--------
+#For kmeans we get CH coef as -> 107.73 for 2 clusters. 
+#Similarly, for hierarical clustering, we get CH coef as -> 8.71 for 2 clusters. Higher the value of CH, better is the clustering solution.Hence, we conclude that, k-means clustering is the more efficient according to CH coef in this case.
+
+```
+#Here, we considered factors like - health, Technology access and Population rates to determine whether a country is developed or not.
+```{r}
+#---------------FOR HEALTH DATA---------------------------------------------------------------
+# 1. K-means and hierarchical clustering methods to group similar countries together
+
+#Considering columns related to health - Health Expenditure per capita, Health expenditure GDP and GDP 
+health <- final[c(4,5,6)]
+#finding optimal number of clusters (k) using elbow method
+fviz_nbclust(health, kmeans, method = "wss")
+#-------------1. K-MEANS FOR HEALTH DATA------------------------
+km_health <- kmeans(health, centers = 2, nstart = 20)
+print(km_health)
+rownames(health)=paste(world1$Country,1:dim(world1)[1], sep = "_")
+#visualizing k-means clusters for health data
+fviz_cluster(list(data=health,cluster=km_health$cluster),main="KMEANS CLUSTER PLOT FOR HEALTH DATASET ")
+
+p_health <- plot_ly(health, x=health$Health.Exp.Capita, y=health$Health.Exp.GDP, 
+             z=health$GDP, color=km_health$cluster) %>%
+  layout(title="3D KMEANS CLUSTER PLOT FOR HEALTH DATASET")%>%
+
+  add_markers(size=1.5)
+p_health
+
+#Explanation : Using K-Means, we tried clustering health data into 2 clusters - using the same category- Developed countries and developing countries. On looking at the result, we get countries like - USA, UK, Germany in one cluster - Developed countries and countries like - India, Indonesia and Bosnia in the second cluster- developing countries. 
+
+#3. Creating a table for health data by cluster based on k-means
+health_table <- data.frame(world1$Country,km_health$cluster)
+health_table <- health_table %>% arrange(health_table$km_health.cluster)
+
+#-------------1. HIERARCHICAL CLUSTERING FOR HEALTH DATA-------------
+#finding euclidean distance
+health_distl=dist(health)
+hc_health<-hclust(health_distl,method="single")
+#Plotting dendogram
+plot(hc_health)
+rect.hclust(hc_health,k=2, border = 2:4)
+#Cutting dendogram to form clusters
+health_clusters=cutree(hc_health, k=2)
+rownames(health)=paste(world1$Country,1:dim(world1)[1], sep = "_")
+#Visualizing clusters in 2d
+fviz_cluster(list(data=health,cluster=health_clusters),main="HIERARCHICAL CLUSTER PLOT FOR HEALTH DATASET ")
+#Visualizing clusters in 3D
+p_health <- plot_ly(health, x=health$Health.Exp.Capita, y=health$Health.Exp.GDP, 
+             z=health$GDP, color=health_clusters) %>%
+   layout(title="3D HIERARCHICAL CLUSTER PLOT FOR HEALTH DATASET")%>%
+  add_markers(size=1.5)
+p_health
+
+## 3. list of all the groups and the countries included within the groups
+#creating a table for health data by cluster based on hierarchical clustering
+hc2_table <- data.frame(world1$Country,health_clusters)
+hc2_table <- hc2_table %>% arrange(hc2_table$health_clusters)
+
+#EXPLANATION : Using hierarchical clustering, we tried clustering health data into 2 clusters - using the same category- Developed countries and developing countries. On looking at the result, we get countries like - UK, Germany, India, Bosnia, Indonesia in one cluster and USA in the second cluster. This might be due to the fact that the United States of America might be ahead of all the countries in the health category.
+
+#Creating a table for health data by cluster based on k-means
+
+## -----------------------------INTERNAL VALIDATION FOR HEALTH DATA---------------------- 
+## 2. Internal validation metrics to report the cluster quality
+#using CH coeficient
+round(calinhara(health,km_health$cluster),digits=2)
+round(calinhara(health,health_clusters),digits=2)
+
+##------- 3. EXPLANATION FOR CH COEFICIENT AND BEST CLUSTERING SOLUTION--------
+#For kmeans we get CH coef as -> 113.26 for 2 clusters. 
+#Similarly, for hierarchical clustering, we get CH coef as -> 63.43 for 2 clusters. Higher the value of CH, better is the clustering solution.Hence, we conclude that, k-means clustering is the more efficient according to CH coef in this case.
+
+
+
+```
+
+```{r}
+#----------------------FOR TECHNOLOGY ACCESS DATA------------------------------------
+## 1. K-means and hierarchical clustering methods to group similar countries together
+
+#considering columns related to technology access - mobile usage, internet usage and GDP
+tele <- final[c(4,9,12)]
+#finding optimal number of clusters (k) using elbow method
+fviz_nbclust(tele, kmeans, method = "wss")
+#-----------------USING K-MEANS CLUSTERING FOR TECHNOLOGY ACCESS DATA----------
+km_tele <- kmeans(tele, centers = 2, nstart = 20)
+print(km_tele)
+rownames(tele)=paste(world1$Country,1:dim(world1)[1], sep = "_")
+#visualising clusters in 2d
+fviz_cluster(list(data=tele,cluster=km_tele$cluster),main="KMEANS CLUSTER PLOT FOR TECHNOLOGY ACCESS DATASET ")
+
+#visualising clusters in 3d
+p_tele <- plot_ly(tele, x=tele$Internet.Usage, y=tele$Mobile.Phone.Usage, 
+             z=tele$GDP, color=km_tele$cluster) %>%
+  layout(title="3D KMEANSL CLUSTER PLOT FOR TECHNOLOGY ACCESS DATASET")%>%
+  add_markers(size=1.5)
+p_tele
+
+#Explanation : Using K-Means, we tried clustering technology access data into 2 clusters - using the same category- Developed countries and developing countries. On looking at the result, we get countries like - USA, UK, Germany in one cluster - Developed countries and countries like - India, Congo, Kenya the second cluster- developing countries. 
+
+## 3. list of all the groups and the countries included within the groups
+#creating a table for technology access data by cluster using k-means clustering
+tele_table <- data.frame(world1$Country,km_tele$cluster)
+tele_table <- tele_table %>% arrange(tele_table$km_tele.cluster)
+
+#------------------1. HEIRARCHICAL CLUSTERING FOR TECHNOLOGY ACCESS DATA--------
+tele_distl=dist(tele)
+hc_tele<-hclust(tele_distl,method="single")
+#plotting dendogram
+plot(hc_tele)
+rect.hclust(hc_tele,k=2,border=2:4)
+tele_clusters=cutree(hc_tele, k=2)
+rownames(tele)=paste(world1$Country,1:dim(world1)[1], sep = "_")
+#Visualizing clusters in 2d
+fviz_cluster(list(data=tele,cluster=tele_clusters),main="HIERARCHICAL CLUSTER PLOT FOR TECHNOLOGY ACCESS DATASET ")
+#visualising clusters in 3d
+p_tele <- plot_ly(tele, x=tele$Internet.Usage, y=tele$Mobile.Phone.Usage, 
+             z=tele$GDP, color=tele_clusters) %>%
+  layout(title="3D HIERARCHICAL CLUSTER PLOT FOR TECHNOLOGY ACCESS DATASET")%>%
+  add_markers(size=1.5)
+p_tele
+#Explanation : Using hierarchical clustering, we tried clustering technology access data into 2 clusters - using the same category- Developed countries and developing countries. On looking at the result, we get countries like - India, Congo,UK, Germany in one cluster and the US in the second cluster. 
+
+## 3. list of all the groups and the countries included within the groups
+##creating a table for technology access data by cluster using heirarchical clustering
+hc3_table <- data.frame(world1$Country,tele_clusters)
+hc3_table <- hc3_table %>% arrange(hc3_table$tele_clusters)
+
+## -----------------------------INTERNAL VALIDATION FOR TECHNOLOGY ACCESS DATA--------------
+## 2. Internal validation metrics to report the cluster quality
+#using CH coeficient
+round(calinhara(tele,km_tele$cluster),digits=2)
+round(calinhara(tele,tele_clusters),digits=2)
+
+##------- 3. EXPLANATION FOR CH COEFICIENT AND BEST CLUSTERING SOLUTION--------
+#For kmeans we get CH coef as -> 123.72 for 2 clusters. 
+#Similarly, for hierarchical clustering, we get CH coef as -> 46.08 for 2 clusters. Higher the value of CH, better is the clustering solution.Hence, we conclude that, k-means clustering is the more efficient according to CH coef in this case.
+
+
+```
+
+```{r}
+##----------------------------FOR POPULATION DATA-------------------------------------
+## 1. K-means and hierarchical clustering methods to group similar countries together
+
+#Consider columns affecting population - Birth rate, Infant Mortality rate and GDP
+rate <- final[c(1,8,4)]
+#finding optimal number of clusters (k) using elbow method
+fviz_nbclust(rate, kmeans, method = "wss")
+#-----------------K-MEANS FOR POPULATION DATA------------------------------
+km_rate <- kmeans(rate, centers = 2, nstart = 20)
+print(km_rate)
+rownames(rate)=paste(world1$Country,1:dim(world1)[1], sep = "_")
+#Visualizing clusters in 2d
+fviz_cluster(list(data=rate,cluster=km_rate$cluster),main="KMEANS CLUSTER PLOT FOR POPULATION DATASET ")
+
+#Visualizing clusters in 3d
+p_rate <- plot_ly(rate, x=rate$Infant.Mortality.Rate, y=rate$Birth.Rate, 
+             z=rate$GDP, color=km_rate$cluster) %>%
+  layout(title="3D KMEANS CLUSTER PLOT FOR POPULATION DATASET ")%>%
+  add_markers(size=1.5)
+p_rate
+
+#Explanation : Using K-Means, we tried clustering population data into 2 clusters - using the same category- Developed countries and developing countries. On looking at the result, we get countries like - USA, UK, Germany, India in one cluster  and countries like - Sudan,Congo, Kenya in the second cluster. 
+
+#3. Creating a table for population data by cluster using k-means clustering
+rate_table <- data.frame(world1$Country,km_rate$cluster)
+rate_table <- rate_table %>% arrange(rate_table$km_rate.cluster)
+#--------------1. HIERARCHICAL CLUSTERING FOR POPULATION DATA----------------
+rate_distl=dist(rate)
+hc_rate<-hclust(rate_distl,method="single")
+plot(hc_rate)
+rect.hclust(hc_rate,k=2)
+rate_clusters=cutree(hc_rate, k=2)
+rownames(rate)=paste(world1$Country,1:dim(world1)[1], sep = "_")
+#visualizing clusters in 2d
+fviz_cluster(list(data=rate,cluster=rate_clusters),main="HIERARCHICAL CLUSTER PLOT FOR POPULATION DATASET ")
+
+
+#Visualizing clusters in 3d
+p_rate <- plot_ly(rate, x=rate$Infant.Mortality.Rate, y=rate$Birth.Rate, 
+             z=rate$GDP, color=rate_clusters) %>%
+  layout(title="3D HIERARCHICAL CLUSTER PLOT FOR POPULATION DATASET ")%>%
+  add_markers(size=1.5)
+p_rate
+#Explanation : Using hierarchical clustering, we tried clustering population data into 2 clusters. On looking at the result, we get countries like - India, Congo,UK, Germany in one cluster and the US in the second cluster. 
+
+#3. Creating a table for population data by cluster using k-means clustering
+hc4_table <- data.frame(world1$Country,rate_clusters)
+hc4_table <- hc4_table %>% arrange(hc4_table$rate_clusters)
+
+
+
+## -----------------------------INTERNAL VALIDATION FOR POPULATION DATA-----------------
+
+## 2. Internal validation metrics to report the cluster quality
+#using CH coeficient
+round(calinhara(rate,km_rate$cluster),digits=2)
+round(calinhara(rate,rate_clusters),digits=2)
+
+##-------3. EXPLANATION FOR CH COEFICIENT AND BEST CLUSTERING SOLUTION--------
+#For kmeans we get CH coef as -> 159.55 for 2 clusters. 
+#Similarly, for hierarchical clustering, we get CH coef as -> 46.17 for 2 clusters. Higher the value of CH, better is the clustering solution.Hence, we conclude that, k-means clustering is the more efficient according to CH coef in this case.
+
+
+```
+
+```{r}
+
+#------------------------SCATTER PLOTS-------------------------------------------------------
+## 4. Generate three different scatter plots of your choice and color the data points according to the group
+
+#----- Scatter plot 1 - FOR HEALTH DATA - HEATH EXPENDITURE PER CAPITA V/S GDP ---------
+p5 <- plot_ly(final, x=final$Health.Exp.Capita, y=final$GDP, 
+              z=NULL, color=km_health$cluster,
+              hovertemplate = paste(world1$Country ,"<br>", "x : %{x}<br>", "y : %{y}<br><extra></extra>")) %>%
+      add_markers(size=0.5) %>% layout(title="HEATH EXPENDITURE PER CAPITA V/S GDP",
+      yaxis = list(
+      dtick = -0.3, 
+      tick0 = 0.1, 
+      tickmode = "linear",title="GDP"),
+      xaxis = list(
+      dtick = -0.3, 
+      tick0 = 0.02, 
+       title="HEATH EXPENDITURE PER CAPITA ", 
+      tickmode = "linear"
+      ))
+p5
+
+#----- Scatter plot 2 - FOR TECHNOLOGY DATA - INTERNET USAGE V/S GDP ---------
+p6 <- plot_ly(final, x=final$Internet.Usage, y=final$GDP, 
+              z=NULL, color=km_tele$cluster,
+              hovertemplate = paste(world1$Country ,"<br>", "x : %{x}<br>", "y : %{y}<br><extra></extra>")) %>%
+  add_markers(size=0.5) %>% 
+  layout(title="INTERNET USAGE V/S GDP",
+      yaxis = list(
+      dtick = -0.3, 
+      tick0 = 0.01, 
+      tickmode = "linear",
+    title="GDP"),
+    xaxis = list(
+      dtick = -0.3, 
+      tick0 = 0.02, 
+      tickmode = "linear",title="INTERNET USAGE "
+    ))
+p6
+
+
+#----- Scatter plot 3 - FOR POPULATION DATA - INFANT MORTALITY RATE V/S GDP ---------
+p7 <- plot_ly(final, x=final$Infant.Mortality.Rate, y=final$GDP, 
+              z=NULL, color=km_rate$cluster,
+              hovertemplate = paste(world1$Country ,"<br>", "x : %{x}<br>", "y : %{y}<br><extra></extra>")) %>%
+  add_markers(size=0.5) %>% 
+  layout(title="INFANT MORTALITY RATE V/S GDP",
+      yaxis = list(
+      dtick = -0.2, 
+      tick0 = 0.01, 
+      tickmode = "linear",title=" GDP"
+    ),
+      xaxis = list(
+      dtick = -2, 
+      tick0 = 0.02, 
+      tickmode = "linear",title="INFANT MORTALITY RATE "
+    ))
+p7
+
+```
+
+```{r}
+
+#-----------SELF ORGANISING MAPS----------------------------------------------
+#We took 3 facets - Health, Technology Access and Population Data to examine if countries are developed or developing.
+#---------------SOM FOR HEALTH DATA-------------------------
+
+library(kohonen)
+final_SOM <- as.matrix(health)
+final_grid <- somgrid(xdim = 3, ydim = 3, topo = "rectangular")
+set.seed(2021)
+final_SOM_model <- som(X = final_SOM, 
+                      grid = final_grid)
+# Plot type 1: counts
+plot(final_SOM_model, type = "counts")
+
+# Plot type 3: point diagram 
+plot(final_SOM_model, type = "mapping")
+
+# Plot type 3: fan diagram 
+# SOM FAN DIAGRAM FOR HEALTH :
+#In the first bottom most circle(from the left), we see that - GDP, Health Capita Per GDP and Health Expenditure per Capita is the highest which means that, countries which fall in that area of the SOM model have the higest GDP, Health Capita Per GDP and Health Expenditure per Capita, i.e they are developed. As we keep moving towards the right of the first circle, we find that GDP, Health Capita Per GDP and Health Expenditure per capita keep reducing which means that, the countries which fall under the latter circles have lower values of GDP... etc i.e they are developing countries.
+plot(final_SOM_model, type = "codes")
+
+health$code<-final_SOM_model$unit.classif
+head(health,10)
+
+
+#------------SOM FOR TECHNOLOGY ACCESS DATA---------------------------
+final_SOM <- as.matrix(tele)
+final_grid <- somgrid(xdim = 3, ydim = 3, topo = "rectangular")
+set.seed(2021)
+final_SOM_model <- som(X = final_SOM, 
+                       grid = final_grid)
+# Plot type 1: counts
+plot(final_SOM_model, type = "counts")
+
+# Plot type 3: point diagram 
+plot(final_SOM_model, type = "mapping")
+
+# Plot type 3: fan diagram
+# SOM FAN DIAGRAM FOR TECHNOLOGY ACCESS :
+#In the first bottom most circle(from the left), we see that - GDP and Internet Usage is high whereas, Mobile usage is low. Countries that fall under this category are developed.As we keep moving towards the right of the first circle, we find that GDP, keeps reducing which means that, the countries which fall under the latter circles have lower values of GDP. i.e they are developing countries. These countries also have higher internet and mobile phone usage. Finally as we keep moving ahead, we see that all three values - GDP, Mobile Phone usage and Internet usage reduces, these characteristics are that of under developed countries.
+plot(final_SOM_model, type = "codes")
+
+tele$code<-final_SOM_model$unit.classif
+head(tele,10)
+
+#------------SOM FOR POPULATION DATA---------------------------
+final_SOM <- as.matrix(rate)
+final_grid <- somgrid(xdim = 3, ydim = 3, topo = "rectangular")
+set.seed(2021)
+final_SOM_model <- som(X = final_SOM, 
+                       grid = final_grid)
+# Plot type 1: counts
+plot(final_SOM_model, type = "counts")
+
+# Plot type 3: point diagram 
+plot(final_SOM_model, type = "mapping")
+
+# Plot type 3: fan diagram 
+# SOM FAN DIAGRAM FOR POPULATION :
+#In the first bottom most circle(from the left), we see that - GDP is the highest whereas, Birth Rate and Infant Mortality Rate is the lowest. We can conclude that, Countries that fall under this category are developed. As we keep moving towards the right of the first circle, we find that GDP, keeps reducing which means that, the countries which fall under the latter circles have lower values of GDP... etc i.e they are developing countries. These countries also have higher Birth Rates and Infant Mortality Rates.
+plot(final_SOM_model, type = "codes")
+
+rate$code<-final_SOM_model$unit.classif
+head(rate,10)
+
+```
+
