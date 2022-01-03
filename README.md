@@ -1,0 +1,2 @@
+# Clustering-algorithms-to-synthetic-and-real-world-data
+Implemented Machine learning algorithms such as K-means, hierarchical clustering algorithms to compare different countries based on attributes like Infant Mortality Rate, GDP, etc. for grouping similar countries together. Executed Self Organizing Maps (SOM) algorithm to understand the high dimensional data by reducing the dimensions of data to a 2-dimensional map for easy analysis and grouping of data 
